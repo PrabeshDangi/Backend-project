@@ -3,10 +3,18 @@
   "version": "1.0.0",
   "description": "Diving more with backend and getting insights of it",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "javascript",
+    "backend"
+  ],
   "author": "Prabesh Dangi",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
 }
