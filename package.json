@@ -1,0 +1,12 @@
+{
+  "name": "more-with-backend",
+  "version": "1.0.0",
+  "description": "Diving more with backend and getting insights of it",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Prabesh Dangi",
+  "license": "ISC"
+}
