@@ -4,7 +4,19 @@ import connectDB from "./db/dbConnect.js";
 dotenv.config({ path: "./.env" });
 const app = express();
 
-connectDB();
+app.on("error", (error) => {
+  console.error("Error: ", error);
+  throw error;
+});
+connectDB()
+  .then(() => {
+    app.listen(process.env.PORT || 5000, () => {
+      console.log(`Server is running on port ${process.env.PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.log("MongoDB connection failed!!", error);
+  });
 
 //Immediately invoked function expression: IIFE
 // (async () => {
