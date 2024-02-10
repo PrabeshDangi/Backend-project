@@ -14,4 +14,10 @@ app.use(urlencoded({ extended: true, limit: "20kb" })); //This will make server 
 app.use(express.static("Public"));
 app.use(cookieParser()); //This will make the cookie of user stored in browser to access and allows to perform CRUD opn.
 
+//Routes import
+import userRouter from "./routes/userRoute.js";
+
+//Router declaration
+app.use("/api/v1/users", userRouter);
+
 export { app };
