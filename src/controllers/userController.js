@@ -15,7 +15,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  const registeredUser = User.findOne({
+  const registeredUser = await User.findOne({
     $or: [{ username }, { email }],
   });
 
@@ -23,8 +23,20 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User already exists");
   }
 
+  //Yedi request ma file aako chha ra tesma avatar naam vayeko array chha vane tyo array ko first index ma vako file ko path line
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+  //const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+  let coverImageLocalPath;
+  //Yedi req.files ma file upload vako chhaina vane tesko path ma aaune undefined lai handle garne method..
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = coverImage[0].path;
+  }
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar not found!!");
@@ -56,7 +68,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new ApiResponse(200, "User Registered Successfully!!"));
+    .json(new ApiResponse(200, createdUser, "User Registered Successfully!!"));
 });
 
 export { registerUser };

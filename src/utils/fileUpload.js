@@ -7,7 +7,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const cloudianryFileUpload = async () => {
+const cloudianryFileUpload = async (localFilePath) => {
   try {
     if (!localFilePath) return null;
 
@@ -17,10 +17,12 @@ const cloudianryFileUpload = async () => {
     });
 
     //uploaded
-    console.log("File has been uploaded successfully!!", response.url);
+    //console.log("File has been uploaded successfully!!", response.url);
+    fs.unlinkSync(localFilePath);
+    //console.log(response);
     return response;
   } catch (error) {
-    fs.unlink(localFilePath); //Temporarily save vako file lai remove gardinchha local server bata
+    fs.unlinkSync(localFilePath); //Temporarily save vako file lai remove gardinchha local server bata
     return null;
   }
 };
