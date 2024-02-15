@@ -108,7 +108,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
     throw new ApiError(400, "username or email is required!!");
   }
   const requestedUser = await User.findOne({
-    $or: [{ username }, { email }],
+    $or: [{ username }, { email }], //Find user based on email or username...
   });
 
   if (!requestedUser) {
@@ -126,6 +126,58 @@ const loginUser = asyncHandler(async (req, res, next) => {
   const { refreshToken, accessToken } = await generateAccessRefreshToken(
     requestedUser._id
   );
+
+  const loggedInUser = await User.findById(requestedUser._id).select(
+    "-password -refreshToken"
+  );
+
+  //Cookie lai server le matra modify garauna milne garaune...
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(200, {
+        requestedUser: loggedInUser,
+        accessToken,
+        refreshToken,
+      }),
+      "User logged in successfully!!"
+    );
 });
 
-export { registerUser, loginUser };
+//logout User
+const logOutUser = asyncHandler(async (req, res) => {
+  //Refresh token generate gareko chhaina vane cookie clear gare matra puchha tara yedi chha vane cookie clear
+  // sang sangai refreshToken lai pani DB bata hataunu parne hunchha!!
+
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        refreshToken: undefined,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(200, {}, "User logged out successfully!!");
+});
+
+export { registerUser, loginUser, logOutUser };
