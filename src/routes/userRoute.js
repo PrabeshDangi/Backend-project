@@ -5,6 +5,7 @@ import {
   logOutUser,
   loginUser,
   registerUser,
+  generateRefreshAccesstoken,
 } from "../controllers/userController.js";
 import { upload } from "../middlewares/multer.js";
 
@@ -24,7 +25,8 @@ router.route("/register").post(
 
 router.route("/login").post(loginUser);
 
-//Secured route
+//Secured route(Yo route haru access garna user loggedIn hunai parne hunchha!!)
 router.route("/logout").post(verifyJWT, logOutUser);
+router.route("/refreshToken").post(generateRefreshAccesstoken);
 
 export default router;
