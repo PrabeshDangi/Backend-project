@@ -1,7 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiErrors.js";
 import { User } from "../models/userModel.js";
-import { cloudianryFileUpload } from "../utils/fileUpload.js";
+import {
+  cloudianryFileUpload,
+  cloudinaryFileDelete,
+} from "../utils/fileUpload.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Jwt from "jsonwebtoken";
 
@@ -19,6 +22,31 @@ const generateAccessRefreshToken = async (userId) => {
     throw new ApiError(500, "Token generation went wrong!!");
   }
 };
+
+//Function to extract Public Id of the asset uploaded in Cloudinary
+function extractPublicId(cloudinaryUrl) {
+  // Check if the URL is valid
+  if (!cloudinaryUrl.startsWith("http://res.cloudinary.com/")) {
+    return null;
+  }
+
+  // Split the URL by "/"
+  const parts = cloudinaryUrl.split("/");
+
+  // Find the index of "upload" in the URL
+  const uploadIndex = parts.indexOf("upload");
+
+  // If "upload" is not found or if it's the last part of the URL, return null
+  if (uploadIndex === -1 || uploadIndex === parts.length - 1) {
+    return null;
+  }
+
+  // The public_id is the part after "upload"
+  const publicIdWithExtension = parts[uploadIndex + 2];
+
+  // Split the publicId by dot (.) and return the first part
+  return publicIdWithExtension.split(".")[0];
+}
 
 const registerUser = asyncHandler(async (req, res, next) => {
   const { username, email, fullname, password } = req.body;
@@ -236,7 +264,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
   //Yeha samma aaipugda user already loggedIn hunchha ra tyo user ko data hamile authmiddleware bata req.user ko rup ma lina sakchhau!!
   const user = await User.findById(req.user?._id);
-
+  //console.log(req.user);
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
   if (!isPasswordCorrect) {
@@ -258,7 +286,9 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const currentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(200, res.user, "Current User fetched successfully!!");
+    .json(
+      new ApiResponse(200, req.user, "Current User fetched successfully!!")
+    );
 });
 
 const updateUserDetails = asyncHandler(async (req, res) => {
@@ -285,6 +315,13 @@ const updateUserDetails = asyncHandler(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
+  const oldUser = await User.findById(req.user?._id);
+  //console.log(oldUser);
+  const oldAvatarFileUrl = oldUser.avatar;
+  //console.log(oldAvatarFileUrl);
+  const public_id = extractPublicId(oldAvatarFileUrl);
+  //console.log(public_id);
+
   const avatarLocalPath = req.file?.path;
 
   if (!avatarLocalPath) {
@@ -306,6 +343,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
+
+  //Delete old avatar from cloudinary!!
+  await cloudinaryFileDelete(public_id);
 
   return res
     .status(201)

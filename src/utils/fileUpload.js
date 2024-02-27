@@ -14,6 +14,8 @@ const cloudianryFileUpload = async (localFilePath) => {
     //Else upload file
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
+      overwrite: "true",
+      invalidate: true, ///yo line add gareko ho ahile
     });
 
     //uploaded
@@ -27,4 +29,14 @@ const cloudianryFileUpload = async (localFilePath) => {
   }
 };
 
-export { cloudianryFileUpload };
+const cloudinaryFileDelete = async (localFilePath) => {
+  try {
+    if (!localFilePath) return null;
+
+    await cloudinary.uploader.destroy(localFilePath);
+  } catch (error) {
+    return null;
+  }
+};
+
+export { cloudianryFileUpload, cloudinaryFileDelete };
