@@ -7,6 +7,7 @@ import {
 } from "../utils/fileUpload.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Jwt from "jsonwebtoken";
+import { subscription } from "../models/subscriptionModel.js";
 
 const generateAccessRefreshToken = async (userId) => {
   try {
@@ -381,6 +382,127 @@ const updateCoverImage = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "CoverImage updated successfully!!"));
 });
 
+const getChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+
+  if (!username?.trim()) {
+    throw new ApiError(400, "Username missing!!");
+  }
+
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: username?.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscribers",
+        as: "subscribedChannel", //Maile subscribe gareko channel haru
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: "$subscribers",
+        },
+        channelsSubscribedTo: {
+          $size: "$subscribedChannel",
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullname: 1,
+        username: 1,
+        avatar: 1,
+        coverImage: 1,
+        subscribersCount: 1,
+        isSubscribed: 1,
+        channelsSubscribedTo: 1,
+      },
+    },
+  ]);
+
+  if (!channel?.length) {
+    throw new ApiError(404, "Channel doesnot exist");
+  }
+
+  return res.status(200).json(200, channel[0], "user fetched successfully!!");
+});
+
+const getWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id), // req.user_id le id string matra dinchha tara hamilai mongodbID chaine vayera yo gareko
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    fullname: 1,
+                    avatar: 1,
+                    username: 1,
+                  },
+                },
+              ],
+            },
+          },
+          //Yo pipeline use nagarera hamile sidhai array result pathauna nee milchha...Tara yesari owner field lai overwrite garera array ko first value i.e object dida frontend bata data fetch garna sajilo hunchha.
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0].watchHistory,
+        "Watch history fetched successfully"
+      )
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -391,4 +513,6 @@ export {
   updateUserDetails,
   updateUserAvatar,
   updateCoverImage,
+  getChannelProfile,
+  getWatchHistory,
 };
